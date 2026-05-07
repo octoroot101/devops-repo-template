@@ -1,0 +1,75 @@
+name: Deploy to Production
+
+on:
+  workflow_run:
+    workflows:
+      - Build Production
+    types:
+      - completed
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. سحب المشروع (حتى نأخذ docker-compose.yml)
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      # 2. نسخ docker-compose.yml إلى السيرفر
+      - name: Copy docker-compose.yml to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          username: ${{ secrets.PRODUCTION_SERVER_USER }}
+          key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "${{ secrets.PRODUCTION_SERVER_APP_PATH }}"
+          strip_components: 0
+          overwrite: true
+
+      # 3. تنفيذ الدبلوي
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PRODUCTION_SERVER_HOST }}
+          username: ${{ secrets.PRODUCTION_SERVER_USER }}
+          key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+
+            echo "Login to GHCR..."
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+              -u "${{ secrets.GHCR_USERNAME }}" \
+              --password-stdin
+
+            echo "Go to project folder..."
+            cd "${{ secrets.PRODUCTION_SERVER_APP_PATH }}"
+
+            echo "Inject .env file..."
+            printf "%s" "${{ secrets.PRODUCTION_ENV_FILE }}" > .env
+            chmod 600 .env
+
+            echo "Check files..."
+            ls -la
+
+            test -f docker-compose.yml || (echo "docker-compose.yml not found" && exit 1)
+            test -f .env || (echo ".env not found" && exit 1)
+
+            echo "Pull latest images..."
+            docker compose pull
+
+            echo "Restart containers..."
+            docker compose up -d --force-recreate --remove-orphans
+
+            echo "Show status..."
+            docker compose ps
+
+            echo "Cleanup..."
+            docker image prune -f
+
+            echo "Deploy completed successfully ✅"

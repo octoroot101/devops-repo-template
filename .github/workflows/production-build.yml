@@ -1,10 +1,10 @@
-name: Build Prodection
+name: Build Production
 
 on:
   push:
-    branches: [ "prodection" ]
+    branches: [ "production" ]
   pull_request:
-    branches: [ "prodection" ]
+    branches: [ "production" ]
   workflow_dispatch:
 
 jobs:

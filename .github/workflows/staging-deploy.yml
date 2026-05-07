@@ -1,9 +1,9 @@
-name: Deploy to PRODECTION
+name: Deploy to Stagging
 
 on:
   workflow_run:
     workflows:
-      - Build Prodection
+      - Build Staging
     types:
       - completed
 
@@ -23,11 +23,11 @@ jobs:
       - name: Copy docker-compose.yml to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.PRODECTION_SERVER_HOST }}
-          username: ${{ secrets.PRODECTION_SERVER_USER }}
-          key: ${{ secrets.PRODECTION_SERVER_SSH_KEY }}
+          host: ${{ secrets.STAGING_SERVER_HOST }}
+          username: ${{ secrets.STAGING_SERVER_USER }}
+          key: ${{ secrets.STAGING_SERVER_SSH_KEY }}
           source: "docker-compose.yml"
-          target: "${{ secrets.PRODECTION_SERVER_APP_PATH }}"
+          target: "${{ secrets.STAGING_SERVER_APP_PATH }}"
           strip_components: 0
           overwrite: true
 
@@ -35,9 +35,9 @@ jobs:
       - name: Deploy on server
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.PRODECTION_SERVER_HOST }}
-          username: ${{ secrets.PRODECTION_SERVER_USER }}
-          key: ${{ secrets.PRODECTION_SERVER_SSH_KEY }}
+          host: ${{ secrets.STAGING_SERVER_HOST }}
+          username: ${{ secrets.STAGING_SERVER_USER }}
+          key: ${{ secrets.STAGING_SERVER_SSH_KEY }}
           command_timeout: 15m
           script: |
             set -e
@@ -48,10 +48,10 @@ jobs:
               --password-stdin
 
             echo "Go to project folder..."
-            cd "${{ secrets.PRODECTION_SERVER_APP_PATH }}"
+            cd "${{ secrets.STAGING_SERVER_APP_PATH }}"
 
             echo "Inject .env file..."
-            printf "%s" "${{ secrets.PRODECTION_ENV_FILE }}" > .env
+            printf "%s" "${{ secrets.STAGING_ENV_FILE }}" > .env
             chmod 600 .env
 
             echo "Check files..."
