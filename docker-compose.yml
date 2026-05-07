@@ -3,15 +3,15 @@ version: "3.9"
 services:
 
 
-  # ===== Main Project =====
-  # main:
-  #   image: ghcr.io/owner-name/project-name:latest
-  #   container_name: ${MAIN}
-  #   restart: unless-stopped
-  #   ports:
-  #     - "127.0.0.1:${MAIN_PORT}:80"
-  #   networks:
-  #     - docker-net
+# ===== Main Project =====
+  main:
+    image: ghcr.io/owner-name/${MAIN_PACKAGE_NAME}:latest
+    container_name: ${MAIN}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAIN_PORT}:80"
+    networks:
+      - docker-net
 
 # ===== Cloudflare Tunnel (Token Method) =====
   cloudflared:
