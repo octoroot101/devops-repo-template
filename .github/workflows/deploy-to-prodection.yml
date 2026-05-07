@@ -3,7 +3,7 @@ name: Deploy to PRODECTION
 on:
   workflow_run:
     workflows:
-      - Build
+      - Build Prodection
     types:
       - completed
 
